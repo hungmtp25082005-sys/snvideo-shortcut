@@ -52,8 +52,9 @@ jobs:
             --skip-sign \
             --comments \
             --derive-uuids \
-            --no-ansi \
-            --output build/SNVideo.unsigned.shortcut
+            --no-ansi
+          test -f src/SNVideo_unsigned.shortcut
+          mv src/SNVideo_unsigned.shortcut build/SNVideo.unsigned.shortcut
 
   build-macos:
     name: Build signed Shortcut
@@ -78,11 +79,11 @@ jobs:
         run: |
           mkdir -p dist
           "$(go env GOPATH)/bin/cherri" src/SNVideo.cherri \
-            --share anyone \
+            --share=anyone \
             --comments \
             --derive-uuids \
             --no-ansi \
-            --output dist/SNVideo.shortcut
+            --output=dist/SNVideo.shortcut
           shasum -a 256 dist/SNVideo.shortcut > dist/SNVideo.shortcut.sha256
 
       - name: Upload signed build artifact

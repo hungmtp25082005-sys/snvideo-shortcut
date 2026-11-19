@@ -1,6 +1,6 @@
 // Slideshow pipeline: download and save one image at a time.
 
-function chooseAndSaveSlideshow(variable images, dictionary data) {
+function chooseAndSaveSlideshow(variable images, dictionary data, bool audioEnabled) {
     @imageCount = count(@images)
     @audioValue = @data['music']
     @mediaIDValue = @data['id']
@@ -18,7 +18,7 @@ function chooseAndSaveSlideshow(variable images, dictionary data) {
 
                 if @validImageURL == "1" {
                     @imageFile = downloadURL(@imageURL)
-                    savePhoto(@imageFile, "Recents")
+                    savePhoto(@imageFile)
                     @savedCount += 1
                 } else {
                     @failedCount += 1
@@ -34,7 +34,6 @@ function chooseAndSaveSlideshow(variable images, dictionary data) {
             stop()
     }
 
-    @audioEnabled = ENABLE_AUDIO
     @audioValid = isHTTPSURL(@audioURL)
     if @audioEnabled == true && @audioValid == "1" {
         menu "Bạn có muốn lưu nhạc nền?" {

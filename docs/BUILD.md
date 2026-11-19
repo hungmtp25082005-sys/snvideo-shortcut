@@ -19,10 +19,10 @@ Yêu cầu Git và Go 1.24 trở lên. Cherri được clone từ tag `v2.4.0`, 
 bash scripts/install-cherri.sh v2.4.0
 mkdir -p dist
 "$(go env GOPATH)/bin/cherri" src/SNVideo.cherri \
-  --share anyone \
+  --share=anyone \
   --comments \
   --derive-uuids \
-  --output dist/SNVideo.shortcut
+  --output=dist/SNVideo.shortcut
 ```
 
 Cherri gọi cơ chế ký native của macOS. Không dùng `--skip-sign` cho file phát hành vì iOS không nhập Shortcut chưa ký.

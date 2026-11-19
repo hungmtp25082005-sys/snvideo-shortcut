@@ -1,7 +1,7 @@
 // Non-TikTok URLs are handed off without being sent to TikWM.
 
-function handoffToCobalt(text cleanURL) {
+function handoffToCobalt(text cleanURL, text cobaltURL) {
     setClipboard(@cleanURL)
     alert("Đã sao chép liên kết. SNVideo sẽ mở Cobalt; hãy dán liên kết tại đó để tiếp tục. Khả năng hỗ trợ phụ thuộc vào Cobalt.", "SNVideo")
-    openURL(COBALT_URL)
+    openURL(@cobaltURL)
 }

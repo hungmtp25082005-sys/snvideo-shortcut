@@ -1,11 +1,11 @@
 // TikWM request, response contract validation, and content classification.
 
-function processTikTok(text cleanURL) {
+function processTikTok(text cleanURL, text tikwmEndpoint, bool audioEnabled) {
     showNotification("SNVideo đang xử lý…", "SNVideo", false)
 
     // Encode the nested TikTok URL exactly once before string interpolation.
     @encodedURL = urlEncode(@cleanURL)
-    @apiURL = "{TIKWM_ENDPOINT}?url={@encodedURL}&hd=1"
+    @apiURL = "{@tikwmEndpoint}?url={@encodedURL}&hd=1"
     @rawResponse = downloadURL(@apiURL)
     @response = getDictionary(@rawResponse)
 
@@ -37,11 +37,11 @@ function processTikTok(text cleanURL) {
     if @images {
         @imageCount = count(@images)
         if @imageCount > 0 {
-            chooseAndSaveSlideshow(@images, @data)
+            chooseAndSaveSlideshow(@images, @data, @audioEnabled)
         } else {
-            chooseAndSaveVideo(@data)
+            chooseAndSaveVideo(@data, @audioEnabled)
         }
     } else {
-        chooseAndSaveVideo(@data)
+        chooseAndSaveVideo(@data, @audioEnabled)
     }
 }

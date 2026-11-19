@@ -9,11 +9,11 @@ function downloadAndSaveVideo(text mediaURL, text resultLabel) {
     }
 
     @videoFile = downloadURL(@mediaURL)
-    savePhoto(@videoFile, "Recents")
+    savePhoto(@videoFile)
     showNotification(@resultLabel, "SNVideo")
 }
 
-function chooseAndSaveVideo(dictionary data) {
+function chooseAndSaveVideo(dictionary data, bool audioEnabled) {
     @hdValue = @data['hdplay']
     @sdValue = @data['play']
     @audioValue = @data['music']
@@ -22,7 +22,6 @@ function chooseAndSaveVideo(dictionary data) {
     @sdURL = "{@sdValue}"
     @audioURL = "{@audioValue}"
     @mediaID = "{@mediaIDValue}"
-    @audioEnabled = ENABLE_AUDIO
     @audioValid = isHTTPSURL(@audioURL)
 
     if @audioEnabled == true && @audioValid == "1" {

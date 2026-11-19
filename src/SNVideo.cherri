@@ -33,7 +33,7 @@ if @inputText {
             @clipboardText = "{@clipboardValue}"
             @urlList = getURLs(@clipboardText)
         item "Kiểm tra cập nhật":
-            checkForUpdates()
+            checkForUpdates(MANIFEST_URL, SNVIDEO_BUILD, SNVIDEO_VERSION)
             stop()
         item "Hủy":
             stop()
@@ -72,7 +72,7 @@ if @urlHost endsWith ".tiktok.com" {
 }
 
 if @isTikTok == true {
-    processTikTok(@cleanURL)
+    processTikTok(@cleanURL, TIKWM_ENDPOINT, ENABLE_AUDIO)
 } else {
-    handoffToCobalt(@cleanURL)
+    handoffToCobalt(@cleanURL, COBALT_URL)
 }

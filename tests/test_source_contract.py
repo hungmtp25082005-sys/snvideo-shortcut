@@ -17,6 +17,9 @@ INSTALLER = (ROOT / "scripts" / "install-cherri.sh").read_text(encoding="utf-8")
 ALL_SOURCE = "\n".join(
     path.read_text(encoding="utf-8") for path in sorted(SRC.rglob("*.cherri"))
 )
+LIB_SOURCE = "\n".join(
+    path.read_text(encoding="utf-8") for path in sorted((SRC / "lib").glob("*.cherri"))
+)
 
 
 class SourceContractTests(unittest.TestCase):
@@ -50,12 +53,12 @@ class SourceContractTests(unittest.TestCase):
         self.assertIn('@audioEnabled == true && @audioValid == "1"', SLIDESHOW)
 
     def test_cobalt_message_precedes_browser_handoff(self):
-        self.assertLess(COBALT.index("alert("), COBALT.index("openURL(COBALT_URL)"))
+        self.assertLess(COBALT.index("alert("), COBALT.index("openURL(@cobaltURL)"))
 
     def test_router_uses_parsed_hostname_before_tikwm(self):
         host_position = MAIN.index('getURLDetail(@cleanURL, "Host")')
         route_position = MAIN.index('endsWith ".tiktok.com"')
-        tikwm_position = MAIN.index("processTikTok(@cleanURL)")
+        tikwm_position = MAIN.index("processTikTok(@cleanURL,")
         self.assertLess(host_position, route_position)
         self.assertLess(route_position, tikwm_position)
         self.assertIn('@urlHost == "tiktok.com"', MAIN)
@@ -88,6 +91,28 @@ class SourceContractTests(unittest.TestCase):
         self.assertGreater(manifest["build"], 0)
         self.assertEqual(manifest["minimum_ios"], "TBD")
         self.assertTrue(manifest["shortcut_icloud_url"].startswith("https://www.icloud.com/shortcuts/"))
+
+    def test_function_bodies_do_not_reference_top_level_config_constants(self):
+        forbidden_references = (
+            "= ENABLE_AUDIO",
+            "{TIKWM_ENDPOINT}",
+            "openURL(COBALT_URL)",
+            '"{MANIFEST_URL}"',
+            "= SNVIDEO_BUILD",
+            "{SNVIDEO_VERSION}",
+        )
+        for reference in forbidden_references:
+            self.assertNotIn(reference, LIB_SOURCE)
+
+    def test_workflow_uses_cherri_240_cli_output_contract(self):
+        self.assertNotIn("--share anyone", WORKFLOW)
+        self.assertNotIn("--output ", WORKFLOW)
+        self.assertIn("--share=anyone", WORKFLOW)
+        self.assertIn("--output=dist/SNVideo.shortcut", WORKFLOW)
+        self.assertIn(
+            "mv src/SNVideo_unsigned.shortcut build/SNVideo.unsigned.shortcut",
+            WORKFLOW,
+        )
 
     def test_cherri_installer_builds_the_pinned_tag_for_both_jobs(self):
         pinned_commit = "2afd41f96988ca4a20aa0afcbf763251e4b20fb7"

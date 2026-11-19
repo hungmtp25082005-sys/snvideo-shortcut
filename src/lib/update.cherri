@@ -1,8 +1,6 @@
 // Update checks are an explicit, isolated menu flow.
 
-function checkForUpdates() {
-    @manifestURL = "{MANIFEST_URL}"
-
+function checkForUpdates(text manifestURL, number currentBuild, text currentVersion) {
     if !@manifestURL {
         alert("Kiểm tra cập nhật chưa được cấu hình. Hãy đặt MANIFEST_URL sau khi repository và liên kết iCloud đã sẵn sàng.", "SNVideo")
     } else {
@@ -30,8 +28,7 @@ function checkForUpdates() {
             stop()
         }
 
-        @remoteBuild = getNumbers("{@remoteBuildValue}")
-        @currentBuild = SNVIDEO_BUILD
+        @remoteBuild = getNumbers(@remoteBuildValue)
 
         if @remoteBuild > @currentBuild {
             @updateURLValue = @manifest['shortcut_icloud_url']
@@ -53,7 +50,7 @@ function checkForUpdates() {
                     nothing()
             }
         } else {
-            alert("Bạn đang dùng bản mới nhất ({SNVIDEO_VERSION}, build {SNVIDEO_BUILD}).", "SNVideo")
+            alert("Bạn đang dùng bản mới nhất ({@currentVersion}, build {@currentBuild}).", "SNVideo")
         }
     }
 }

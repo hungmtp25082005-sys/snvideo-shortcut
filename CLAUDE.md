@@ -33,8 +33,8 @@ Validate Cherri syntax without signing (Linux/macOS):
 ```bash
 mkdir -p build
 "$(go env GOPATH)/bin/cherri" src/SNVideo.cherri \
-  --skip-sign --comments --derive-uuids --no-ansi \
-  --output build/SNVideo.unsigned.shortcut
+  --skip-sign --comments --derive-uuids --no-ansi
+mv src/SNVideo_unsigned.shortcut build/SNVideo.unsigned.shortcut
 ```
 
 Build and sign a distributable Shortcut on macOS:
@@ -42,8 +42,8 @@ Build and sign a distributable Shortcut on macOS:
 ```bash
 mkdir -p dist
 "$(go env GOPATH)/bin/cherri" src/SNVideo.cherri \
-  --share anyone --comments --derive-uuids \
-  --output dist/SNVideo.shortcut
+  --share=anyone --comments --derive-uuids \
+  --output=dist/SNVideo.shortcut
 ```
 
 There is no separate linter configured. The required automated checks are the Python contract suite followed by Cherri compilation. `.github/workflows/build-shortcut.yml` performs both, then signs on `macos-15`; a `v*` tag also creates a GitHub Release.
@@ -63,7 +63,7 @@ The modules under `src/lib/` form the processing pipeline:
 5. Audio saves through Files, not Photos. Non-TikTok URLs are copied and handed to the fixed Cobalt URL.
 6. Update checks are an explicit menu flow, separate from media downloads, and allowlist GitHub Raw for manifests and `www.icloud.com` for installation links.
 
-Cherri functions compile into nested Shortcut invocations. A `stop()` inside a helper function stops that child invocation, not necessarily its caller. Keep terminal error handling (`alert(...); stop()`) in the same function or top-level flow that must not continue; do not reintroduce a generic `stopWithError()` helper without an explicit caller stop.
+Cherri functions compile into a generated header and nested Shortcut invocations. The header is parsed before top-level `const` declarations, so function bodies must receive values from `src/config.cherri` through parameters rather than reference those constants directly. A `stop()` inside a helper function stops that child invocation, not necessarily its caller. Keep terminal error handling (`alert(...); stop()`) in the same function or top-level flow that must not continue; do not reintroduce a generic `stopWithError()` helper without an explicit caller stop.
 
 `tests/test_source_contract.py` verifies architectural invariants such as action imports, explicit Clipboard access, hostname routing order, one-layer URL encoding, sequential slideshow handling, disabled unverified features, update-domain allowlists, and absence of obvious credentials. These tests inspect source structure; they do not replace API, permission, Share Sheet, memory, or network-failure testing on iOS.
 
