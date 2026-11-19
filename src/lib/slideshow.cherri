@@ -1,0 +1,47 @@
+// Slideshow pipeline: download and save one image at a time.
+
+function chooseAndSaveSlideshow(variable images, dictionary data) {
+    @imageCount = count(@images)
+    @audioValue = @data['music']
+    @mediaIDValue = @data['id']
+    @audioURL = "{@audioValue}"
+    @mediaID = "{@mediaIDValue}"
+
+    menu "Đã tìm thấy {@imageCount} ảnh" {
+        item "Tải tất cả ảnh":
+            @savedCount = 0
+            @failedCount = 0
+
+            for imageItem in @images {
+                @imageURL = trimWhitespace("{@imageItem}")
+                @validImageURL = isHTTPSURL(@imageURL)
+
+                if @validImageURL == "1" {
+                    @imageFile = downloadURL(@imageURL)
+                    savePhoto(@imageFile, "Recents")
+                    @savedCount += 1
+                } else {
+                    @failedCount += 1
+                }
+            }
+
+            if @failedCount > 0 {
+                showNotification("Đã lưu {@savedCount}/{@imageCount} ảnh; bỏ qua {@failedCount} URL không hợp lệ.", "SNVideo")
+            } else {
+                showNotification("Đã lưu {@savedCount} ảnh vào Ảnh.", "SNVideo")
+            }
+        item "Hủy":
+            stop()
+    }
+
+    @audioEnabled = ENABLE_AUDIO
+    @audioValid = isHTTPSURL(@audioURL)
+    if @audioEnabled == true && @audioValid == "1" {
+        menu "Bạn có muốn lưu nhạc nền?" {
+            item "Lưu âm thanh":
+                saveAudio(@audioURL, @mediaID)
+            item "Không, hoàn tất":
+                nothing()
+        }
+    }
+}

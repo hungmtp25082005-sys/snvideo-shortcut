@@ -1,0 +1,32 @@
+// Shared URL validation.
+
+function isHTTPSURL(text candidate): text {
+    @trimmedCandidate = trimWhitespace(@candidate)
+
+    if !@trimmedCandidate {
+        output("0")
+    } else {
+        @candidateSchemeValue = getURLDetail(@trimmedCandidate, "Scheme")
+        @candidateHostValue = getURLDetail(@trimmedCandidate, "Host")
+        @candidateScheme = lowercase("{@candidateSchemeValue}")
+        @candidateHost = lowercase("{@candidateHostValue}")
+
+        if @candidateScheme == "https" && @candidateHost {
+            output("1")
+        } else {
+            output("0")
+        }
+    }
+}
+
+function normalizeInputURL(text candidate): text {
+    @trimmedURL = trimWhitespace(@candidate)
+    @withoutFragment = replaceText("#.*$", "", @trimmedURL, true, true)
+    @validHTTPS = isHTTPSURL(@withoutFragment)
+
+    if @validHTTPS == "1" {
+        output("{@withoutFragment}")
+    } else {
+        output("")
+    }
+}

@@ -1,0 +1,7 @@
+build/
+dist/
+*.shortcut
+*.plist
+*.preprocessed.cherri
+__pycache__/
+*.pyc

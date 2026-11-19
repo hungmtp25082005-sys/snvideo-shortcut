@@ -1,0 +1,78 @@
+#define name SNVideo
+#define color darkblue
+#define glyph play
+#define inputs url, text
+#define from sharesheet
+#define version 18
+
+#include 'actions/web'
+#include 'actions/text'
+#include 'actions/sharing'
+#include 'actions/documents'
+#include 'actions/photos'
+
+#include 'config.cherri'
+#include 'lib/common.cherri'
+#include 'lib/audio.cherri'
+#include 'lib/video.cherri'
+#include 'lib/slideshow.cherri'
+#include 'lib/cobalt.cherri'
+#include 'lib/tikwm.cherri'
+#include 'lib/update.cherri'
+
+// INPUT: prefer Share Sheet; ask before reading Clipboard when run directly.
+@inputText = "{ShortcutInput}"
+@urlList: array
+
+if @inputText {
+    @urlList = getURLs(@inputText)
+} else {
+    menu "Bạn muốn làm gì?" {
+        item "Dùng liên kết trong Clipboard":
+            @clipboardValue = getClipboard()
+            @clipboardText = "{@clipboardValue}"
+            @urlList = getURLs(@clipboardText)
+        item "Kiểm tra cập nhật":
+            checkForUpdates()
+            stop()
+        item "Hủy":
+            stop()
+    }
+}
+
+// INPUT: require one explicit URL selection.
+@urlCount = count(@urlList)
+if @urlCount == 0 {
+    alert("Không tìm thấy URL. Hãy dùng Share Sheet hoặc sao chép một liên kết HTTPS.", "SNVideo")
+    stop()
+}
+
+@selectedURLValue = getFirstItem(@urlList)
+if @urlCount > 1 {
+    @selectedURLValue = chooseFromList(@urlList, "Chọn một liên kết để xử lý")
+}
+
+@selectedURL = "{@selectedURLValue}"
+@cleanURL = normalizeInputURL(@selectedURL)
+if !@cleanURL {
+    alert("SNVideo chỉ chấp nhận URL HTTPS hợp lệ.", "SNVideo")
+    stop()
+}
+
+// ROUTER: compare the parsed hostname, never the whole URL string.
+@urlHostValue = getURLDetail(@cleanURL, "Host")
+@urlHost = lowercase("{@urlHostValue}")
+@isTikTok = false
+
+if @urlHost == "tiktok.com" {
+    @isTikTok = true
+}
+if @urlHost endsWith ".tiktok.com" {
+    @isTikTok = true
+}
+
+if @isTikTok == true {
+    processTikTok(@cleanURL)
+} else {
+    handoffToCobalt(@cleanURL)
+}

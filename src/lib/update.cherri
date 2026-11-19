@@ -1,0 +1,59 @@
+// Update checks are an explicit, isolated menu flow.
+
+function checkForUpdates() {
+    @manifestURL = "{MANIFEST_URL}"
+
+    if !@manifestURL {
+        alert("Kiểm tra cập nhật chưa được cấu hình. Hãy đặt MANIFEST_URL sau khi repository và liên kết iCloud đã sẵn sàng.", "SNVideo")
+    } else {
+        @manifestSchemeValue = getURLDetail(@manifestURL, "Scheme")
+        @manifestHostValue = getURLDetail(@manifestURL, "Host")
+        @manifestScheme = lowercase("{@manifestSchemeValue}")
+        @manifestHost = lowercase("{@manifestHostValue}")
+
+        if @manifestScheme != "https" || @manifestHost != "raw.githubusercontent.com" {
+            alert("MANIFEST_URL phải dùng HTTPS trên raw.githubusercontent.com.", "SNVideo")
+            stop()
+        }
+
+        @manifestRaw = downloadURL(@manifestURL)
+        @manifest = getDictionary(@manifestRaw)
+
+        if !@manifest {
+            alert("Không đọc được manifest cập nhật.", "SNVideo")
+            stop()
+        }
+
+        @remoteBuildValue = @manifest['build']
+        if !@remoteBuildValue {
+            alert("Manifest thiếu build.", "SNVideo")
+            stop()
+        }
+
+        @remoteBuild = getNumbers("{@remoteBuildValue}")
+        @currentBuild = SNVIDEO_BUILD
+
+        if @remoteBuild > @currentBuild {
+            @updateURLValue = @manifest['shortcut_icloud_url']
+            @updateURL = "{@updateURLValue}"
+            @updateSchemeValue = getURLDetail(@updateURL, "Scheme")
+            @updateHostValue = getURLDetail(@updateURL, "Host")
+            @updateScheme = lowercase("{@updateSchemeValue}")
+            @updateHost = lowercase("{@updateHostValue}")
+
+            if @updateScheme != "https" || @updateHost != "www.icloud.com" {
+                alert("Manifest chứa liên kết cập nhật không hợp lệ.", "SNVideo")
+                stop()
+            }
+
+            menu "Có bản cập nhật build {@remoteBuild}" {
+                item "Cập nhật ngay":
+                    openURL(@updateURL)
+                item "Để sau":
+                    nothing()
+            }
+        } else {
+            alert("Bạn đang dùng bản mới nhất ({SNVIDEO_VERSION}, build {SNVIDEO_BUILD}).", "SNVideo")
+        }
+    }
+}

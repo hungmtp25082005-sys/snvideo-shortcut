@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "build": 10000,
+  "release_date": "2026-11-19",
+  "minimum_ios": "TBD",
+  "shortcut_icloud_url": "https://www.icloud.com/shortcuts/REPLACE_AFTER_DEVICE_TEST",
+  "changelog": [
+    "Bản phát hành đầu tiên",
+    "Tải video TikTok với fallback HD sang SD",
+    "Tải slideshow tuần tự",
+    "Chuyển URL ngoài TikTok sang Cobalt"
+  ]
+}

@@ -1,0 +1,12 @@
+// SNVideo build-time configuration.
+// Keep MANIFEST_URL empty until the repository owner and iCloud Shortcut URL are final.
+
+const SNVIDEO_VERSION = "1.0.0"
+const SNVIDEO_BUILD = 10000
+
+// Keep disabled until Gate B confirms the audio key and media format on-device.
+const ENABLE_AUDIO = false
+
+const TIKWM_ENDPOINT = "https://www.tikwm.com/api/"
+const COBALT_URL = "https://cobalt.tools/"
+const MANIFEST_URL = ""

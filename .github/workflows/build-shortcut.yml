@@ -1,0 +1,107 @@
+name: Build SNVideo Shortcut
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snvideo-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CHERRI_VERSION: v2.4.0
+  GO_VERSION: 1.24.0
+
+jobs:
+  validate:
+    name: Validate source
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Python
+        run: python3 --version
+
+      - name: Run source contract tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+
+      - name: Install pinned Cherri compiler
+        run: go install github.com/electrikmilk/cherri@${CHERRI_VERSION}
+
+      - name: Compile unsigned validation artifact
+        run: |
+          mkdir -p build
+          "$(go env GOPATH)/bin/cherri" src/SNVideo.cherri \
+            --skip-sign \
+            --comments \
+            --derive-uuids \
+            --no-ansi \
+            --output build/SNVideo.unsigned.shortcut
+
+  build-macos:
+    name: Build signed Shortcut
+    needs: validate
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+
+      - name: Install pinned Cherri compiler
+        run: go install github.com/electrikmilk/cherri@${CHERRI_VERSION}
+
+      - name: Compile and sign for public sharing
+        run: |
+          mkdir -p dist
+          "$(go env GOPATH)/bin/cherri" src/SNVideo.cherri \
+            --share anyone \
+            --comments \
+            --derive-uuids \
+            --no-ansi \
+            --output dist/SNVideo.shortcut
+          shasum -a 256 dist/SNVideo.shortcut > dist/SNVideo.shortcut.sha256
+
+      - name: Upload signed build artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: SNVideo-${{ github.sha }}
+          path: |
+            dist/SNVideo.shortcut
+            dist/SNVideo.shortcut.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/SNVideo.shortcut \
+            dist/SNVideo.shortcut.sha256 \
+            --verify-tag \
+            --generate-notes \
+            --title "SNVideo ${GITHUB_REF_NAME}"
