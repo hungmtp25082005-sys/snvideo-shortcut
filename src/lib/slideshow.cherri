@@ -6,16 +6,15 @@
 @audioURL = "{@audioValue}"
 @mediaID = "{@mediaIDValue}"
 
-@imageLabels: array
-repeat labelIndex for @imageCount {
+const imageLabels = repeat labelIndex for @imageCount {
     @imageLabel = "Image{@labelIndex}"
     if @labelIndex < 10 {
         @imageLabel = "Image0{@labelIndex}"
     }
-    @imageLabels += @imageLabel
+    text(@imageLabel)
 }
 
-@selectedImageLabels = chooseFromList(@imageLabels, "Chọn ảnh cần tải", true, true)
+@selectedImageLabels = chooseFromList(imageLabels, "Chọn ảnh cần tải", true, true)
 if !@selectedImageLabels {
     alert("Bạn chưa chọn ảnh nào.", "SNVideo")
     stop()

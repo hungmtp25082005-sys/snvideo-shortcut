@@ -96,7 +96,7 @@ class SourceContractTests(unittest.TestCase):
         self.assertIsNone(re.search(r"@[A-Za-z0-9_]+\['[^']+'\]", ALL_SOURCE))
 
     def test_slideshow_selects_labels_then_saves_sequentially(self):
-        choice_position = SLIDESHOW.index("chooseFromList(@imageLabels")
+        choice_position = SLIDESHOW.index("chooseFromList(imageLabels")
         loop_position = SLIDESHOW.index("for imageItem in @images")
         download_position = SLIDESHOW.index("downloadURL(@imageURL)")
         save_position = SLIDESHOW.index("savePhoto(@imageFile")
@@ -106,7 +106,7 @@ class SourceContractTests(unittest.TestCase):
         self.assertIn('"Image0{@labelIndex}"', SLIDESHOW)
         self.assertIn('"Image0{@imageIndex}"', SLIDESHOW)
         self.assertIn(
-            'chooseFromList(@imageLabels, "Chọn ảnh cần tải", true, true)',
+            'chooseFromList(imageLabels, "Chọn ảnh cần tải", true, true)',
             SLIDESHOW,
         )
         self.assertIn("@selectedLabelSet contains @imageSelectionToken", SLIDESHOW)
@@ -130,6 +130,10 @@ class SourceContractTests(unittest.TestCase):
         self.assertIsNone(re.search(r"(?m)^\s*function\s+", ALL_SOURCE))
         self.assertNotIn("runSelf(", ALL_SOURCE)
         self.assertNotIn("cherri_functions", ALL_SOURCE)
+
+    def test_variables_are_not_declared_without_initial_values(self):
+        uninitialized = r"(?m)^\s*@[A-Za-z0-9_]+\s*:\s*(array|dictionary|text|number|bool)\s*$"
+        self.assertIsNone(re.search(uninitialized, ALL_SOURCE))
 
     def test_flat_modules_are_included_once_in_the_main_pipeline(self):
         expected_includes = (
@@ -155,9 +159,11 @@ class SourceContractTests(unittest.TestCase):
             WORKFLOW,
         )
 
-    def test_compiled_shortcut_verifier_rejects_self_invocation(self):
+    def test_compiled_shortcut_verifier_rejects_invalid_actions(self):
         self.assertIn('endswith(".runworkflow")', VERIFY_SHORTCUT)
         self.assertIn('== "cherri_functions"', VERIFY_SHORTCUT)
+        self.assertIn('endswith(".setvariable")', VERIFY_SHORTCUT)
+        self.assertIn('"WFInput" not in parameters', VERIFY_SHORTCUT)
 
     def test_cherri_installer_builds_the_pinned_tag_for_both_jobs(self):
         pinned_commit = "2afd41f96988ca4a20aa0afcbf763251e4b20fb7"

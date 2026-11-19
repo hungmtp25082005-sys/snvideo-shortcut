@@ -11,6 +11,15 @@ def find_forbidden(value, path="$"):
         if isinstance(identifier, str) and identifier.lower().endswith(".runworkflow"):
             findings.append(f"{path}.WFWorkflowActionIdentifier={identifier}")
 
+        parameters = value.get("WFWorkflowActionParameters", {})
+        if (
+            isinstance(identifier, str)
+            and identifier.lower().endswith(".setvariable")
+            and isinstance(parameters, dict)
+            and "WFInput" not in parameters
+        ):
+            findings.append(f"{path}: Set Variable is missing WFInput")
+
         for key, child in value.items():
             child_path = f"{path}.{key}"
             if str(key).lower() == "cherri_functions":
@@ -36,10 +45,13 @@ def main():
     findings = find_forbidden(shortcut)
     if findings:
         details = "\n".join(f"- {finding}" for finding in findings)
-        raise SystemExit(f"forbidden self-invocation metadata found:\n{details}")
+        raise SystemExit(f"invalid Shortcut structure found:\n{details}")
 
     actions = shortcut.get("WFWorkflowActions", [])
-    print(f"Verified {shortcut_path}: {len(actions)} actions, no Run Shortcut/function dispatcher")
+    print(
+        f"Verified {shortcut_path}: {len(actions)} actions, "
+        "no Run Shortcut/function dispatcher or incomplete Set Variable"
+    )
 
 
 if __name__ == "__main__":

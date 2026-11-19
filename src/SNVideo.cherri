@@ -14,8 +14,7 @@
 #include 'config.cherri'
 
 // INPUT: prefer Share Sheet; ask before reading Clipboard when run directly.
-@urlList: array
-@audioEnabled: bool
+@audioEnabled = false
 @audioEnabled = ENABLE_AUDIO
 
 if ShortcutInput {
