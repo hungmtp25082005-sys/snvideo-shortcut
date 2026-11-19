@@ -15,7 +15,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-git clone \
+git -c core.autocrlf=false clone \
     --depth 1 \
     --branch "$version" \
     --single-branch \

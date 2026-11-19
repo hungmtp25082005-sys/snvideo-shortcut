@@ -139,7 +139,7 @@ class SourceContractTests(unittest.TestCase):
         )
         self.assertIn(f"CHERRI_COMMIT: {pinned_commit}", WORKFLOW)
         self.assertIn(f'DEFAULT_COMMIT="{pinned_commit}"', INSTALLER)
-        self.assertIn('git clone \\\n', INSTALLER)
+        self.assertIn('git -c core.autocrlf=false clone \\\n', INSTALLER)
         self.assertIn('go build -C "$source_dir"', INSTALLER)
 
     def test_no_obvious_secret_material(self):
