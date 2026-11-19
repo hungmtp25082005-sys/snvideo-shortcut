@@ -6,9 +6,10 @@ Mã nguồn dùng **Cherri 2.4.0** và tạo Apple Shortcut từ `src/SNVideo.ch
 
 - `src/SNVideo.cherri`: metadata, tiếp nhận đầu vào và router chính.
 - `src/config.cherri`: phiên bản, build và endpoint cố định.
-- `src/lib/`: các module `common`, `tikwm`, `video`, `slideshow`, `audio`, `cobalt`, `update`.
+- `src/lib/`: các snippet tuần tự `common`, `tikwm`, `video`, `slideshow`, `audio`, `cobalt`, `update`; không được khai báo Cherri `function` vì sẽ sinh self-invoking Shortcut.
 - `tests/test_source_contract.py`: kiểm tra các bất biến kiến trúc và bảo mật.
 - `scripts/install-cherri.sh`: clone tag, xác minh commit và build compiler Cherri dùng chung cho local/CI.
+- `scripts/verify_shortcut.py`: đọc plist đã compile và từ chối `Run Shortcut`/`cherri_functions`.
 - `.github/workflows/build-shortcut.yml`: kiểm tra trên Linux, sau đó build và ký trên macOS.
 
 ## Build cục bộ trên macOS
@@ -31,7 +32,7 @@ Cherri gọi cơ chế ký native của macOS. Không dùng `--skip-sign` cho fi
 
 Workflow có hai job:
 
-1. `validate`: chạy unit test và biên dịch không ký trên Ubuntu để phát hiện lỗi cú pháp nhanh.
+1. `validate`: chạy unit test, biên dịch không ký trên Ubuntu, rồi kiểm tra plist không chứa self-invocation.
 2. `build-macos`: chỉ chạy sau khi validate thành công, biên dịch và ký file `SNVideo.shortcut` với chế độ chia sẻ `anyone`, rồi upload artifact cùng SHA-256.
 
 Có thể chạy thủ công tại **Actions → Build SNVideo Shortcut → Run workflow**. Khi push tag dạng `v1.0.0`, workflow còn tạo GitHub Release và đính kèm file đã ký.

@@ -12,19 +12,14 @@
 #include 'actions/photos'
 
 #include 'config.cherri'
-#include 'lib/common.cherri'
-#include 'lib/audio.cherri'
-#include 'lib/video.cherri'
-#include 'lib/slideshow.cherri'
-#include 'lib/cobalt.cherri'
-#include 'lib/tikwm.cherri'
-#include 'lib/update.cherri'
 
 // INPUT: prefer Share Sheet; ask before reading Clipboard when run directly.
-@inputText = "{ShortcutInput}"
 @urlList: array
+@audioEnabled: bool
+@audioEnabled = ENABLE_AUDIO
 
-if @inputText {
+if ShortcutInput {
+    @inputText = "{ShortcutInput}"
     @urlList = getURLs(@inputText)
 } else {
     menu "Bạn muốn làm gì?" {
@@ -33,7 +28,7 @@ if @inputText {
             @clipboardText = "{@clipboardValue}"
             @urlList = getURLs(@clipboardText)
         item "Kiểm tra cập nhật":
-            checkForUpdates(MANIFEST_URL, SNVIDEO_BUILD, SNVIDEO_VERSION)
+            #include 'lib/update.cherri'
             stop()
         item "Hủy":
             stop()
@@ -53,11 +48,7 @@ if @urlCount > 1 {
 }
 
 @selectedURL = "{@selectedURLValue}"
-@cleanURL = normalizeInputURL(@selectedURL)
-if !@cleanURL {
-    alert("SNVideo chỉ chấp nhận URL HTTPS hợp lệ.", "SNVideo")
-    stop()
-}
+#include 'lib/common.cherri'
 
 // ROUTER: compare the parsed hostname, never the whole URL string.
 @urlHostValue = getURLDetail(@cleanURL, "Host")
@@ -72,7 +63,7 @@ if @urlHost endsWith ".tiktok.com" {
 }
 
 if @isTikTok == true {
-    processTikTok(@cleanURL, TIKWM_ENDPOINT, ENABLE_AUDIO)
+    #include 'lib/tikwm.cherri'
 } else {
-    handoffToCobalt(@cleanURL, COBALT_URL)
+    #include 'lib/cobalt.cherri'
 }

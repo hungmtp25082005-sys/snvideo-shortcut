@@ -1,21 +1,27 @@
-// Audio is saved through the Files picker, never to Photos.
+// Save the selected audio through Files, never Photos.
 
-function saveAudio(text audioURL, text mediaID) {
-    @validAudioURL = isHTTPSURL(@audioURL)
-
-    if @validAudioURL != "1" {
-        alert("Không tìm thấy URL âm thanh HTTPS hợp lệ.", "SNVideo")
-        stop()
+@validAudioURL = false
+if @audioURL {
+    @audioSchemeValue = getURLDetail(@audioURL, "Scheme")
+    @audioHostValue = getURLDetail(@audioURL, "Host")
+    @audioScheme = lowercase("{@audioSchemeValue}")
+    @audioHost = lowercase("{@audioHostValue}")
+    if @audioScheme == "https" && @audioHost {
+        @validAudioURL = true
     }
-
-    @audioFile = downloadURL(@audioURL)
-    @audioName = "SNVideo_audio"
-
-    if @mediaID {
-        @audioName = "SNVideo_{@mediaID}_audio"
-    }
-
-    @namedAudio = setName(@audioFile, @audioName, false)
-    saveFilePrompt(@namedAudio, false)
-    showNotification("Đã chuyển âm thanh tới trình lưu tệp.", "SNVideo")
 }
+
+if @validAudioURL != true {
+    alert("Không tìm thấy URL âm thanh HTTPS hợp lệ.", "SNVideo")
+    stop()
+}
+
+@audioFile = downloadURL(@audioURL)
+@audioName = "SNVideo_audio"
+if @mediaID {
+    @audioName = "SNVideo_{@mediaID}_audio"
+}
+
+@namedAudio = setName(@audioFile, @audioName)
+saveFilePrompt(@namedAudio)
+showNotification("Đã chuyển âm thanh tới trình lưu tệp.", "SNVideo")

@@ -3,5 +3,6 @@ dist/
 *.shortcut
 *.plist
 *.preprocessed.cherri
+*_processed.cherri
 __pycache__/
 *.pyc

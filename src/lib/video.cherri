@@ -1,76 +1,102 @@
-// TikTok video selection and sequential download/save pipeline.
+// Select one video/audio result, then download at most one media file.
 
-function downloadAndSaveVideo(text mediaURL, text resultLabel) {
-    @validMediaURL = isHTTPSURL(@mediaURL)
+@hdValue = @data['hdplay']
+@sdValue = @data['play']
+@audioValue = @data['music']
+@mediaIDValue = @data['id']
+@hdURL = "{@hdValue}"
+@sdURL = "{@sdValue}"
+@audioURL = "{@audioValue}"
+@mediaID = "{@mediaIDValue}"
+@audioValid = false
 
-    if @validMediaURL != "1" {
+if @audioURL {
+    @audioSchemeValue = getURLDetail(@audioURL, "Scheme")
+    @audioHostValue = getURLDetail(@audioURL, "Host")
+    @audioScheme = lowercase("{@audioSchemeValue}")
+    @audioHost = lowercase("{@audioHostValue}")
+    if @audioScheme == "https" && @audioHost {
+        @audioValid = true
+    }
+}
+
+@selectedVideoURL = ""
+@videoResultLabel = ""
+
+if @audioEnabled == true && @audioValid == true {
+    menu "Bạn muốn tải nội dung nào?" {
+        item "Video chất lượng cao":
+            if @hdURL {
+                @selectedVideoURL = @hdURL
+                @videoResultLabel = "Đã lưu video HD vào Ảnh."
+            } else {
+                if @sdURL {
+                    @selectedVideoURL = @sdURL
+                    @videoResultLabel = "Đã lưu video bằng chất lượng khả dụng."
+                } else {
+                    alert("TikWM không trả về video HD hoặc SD.", "SNVideo")
+                    stop()
+                }
+            }
+        item "Video tải nhanh":
+            if @sdURL {
+                @selectedVideoURL = @sdURL
+                @videoResultLabel = "Đã lưu video SD vào Ảnh."
+            } else {
+                alert("TikWM không trả về video SD.", "SNVideo")
+                stop()
+            }
+        item "Chỉ lấy âm thanh":
+            @shouldSaveAudio = true
+        item "Hủy":
+            stop()
+    }
+} else {
+    menu "Bạn muốn tải nội dung nào?" {
+        item "Video chất lượng cao":
+            if @hdURL {
+                @selectedVideoURL = @hdURL
+                @videoResultLabel = "Đã lưu video HD vào Ảnh."
+            } else {
+                if @sdURL {
+                    @selectedVideoURL = @sdURL
+                    @videoResultLabel = "Đã lưu video bằng chất lượng khả dụng."
+                } else {
+                    alert("TikWM không trả về video HD hoặc SD.", "SNVideo")
+                    stop()
+                }
+            }
+        item "Video tải nhanh":
+            if @sdURL {
+                @selectedVideoURL = @sdURL
+                @videoResultLabel = "Đã lưu video SD vào Ảnh."
+            } else {
+                alert("TikWM không trả về video SD.", "SNVideo")
+                stop()
+            }
+        item "Hủy":
+            stop()
+    }
+}
+
+if @shouldSaveAudio != true {
+    @selectedVideoValid = false
+    if @selectedVideoURL {
+        @videoSchemeValue = getURLDetail(@selectedVideoURL, "Scheme")
+        @videoHostValue = getURLDetail(@selectedVideoURL, "Host")
+        @videoScheme = lowercase("{@videoSchemeValue}")
+        @videoHost = lowercase("{@videoHostValue}")
+        if @videoScheme == "https" && @videoHost {
+            @selectedVideoValid = true
+        }
+    }
+
+    if @selectedVideoValid != true {
         alert("TikWM không trả về URL video HTTPS hợp lệ.", "SNVideo")
         stop()
     }
 
-    @videoFile = downloadURL(@mediaURL)
+    @videoFile = downloadURL(@selectedVideoURL)
     savePhoto(@videoFile)
-    showNotification(@resultLabel, "SNVideo")
-}
-
-function chooseAndSaveVideo(dictionary data, bool audioEnabled) {
-    @hdValue = @data['hdplay']
-    @sdValue = @data['play']
-    @audioValue = @data['music']
-    @mediaIDValue = @data['id']
-    @hdURL = "{@hdValue}"
-    @sdURL = "{@sdValue}"
-    @audioURL = "{@audioValue}"
-    @mediaID = "{@mediaIDValue}"
-    @audioValid = isHTTPSURL(@audioURL)
-
-    if @audioEnabled == true && @audioValid == "1" {
-        menu "Bạn muốn tải nội dung nào?" {
-            item "Video chất lượng cao":
-                if @hdURL {
-                    downloadAndSaveVideo(@hdURL, "Đã lưu video HD vào Ảnh.")
-                } else {
-                    if @sdURL {
-                        downloadAndSaveVideo(@sdURL, "Đã lưu video bằng chất lượng khả dụng.")
-                    } else {
-                        alert("TikWM không trả về video HD hoặc SD.", "SNVideo")
-                        stop()
-                    }
-                }
-            item "Video tải nhanh":
-                if @sdURL {
-                    downloadAndSaveVideo(@sdURL, "Đã lưu video SD vào Ảnh.")
-                } else {
-                    alert("TikWM không trả về video SD.", "SNVideo")
-                    stop()
-                }
-            item "Chỉ lấy âm thanh":
-                saveAudio(@audioURL, @mediaID)
-            item "Hủy":
-                stop()
-        }
-    } else {
-        menu "Bạn muốn tải nội dung nào?" {
-            item "Video chất lượng cao":
-                if @hdURL {
-                    downloadAndSaveVideo(@hdURL, "Đã lưu video HD vào Ảnh.")
-                } else {
-                    if @sdURL {
-                        downloadAndSaveVideo(@sdURL, "Đã lưu video bằng chất lượng khả dụng.")
-                    } else {
-                        alert("TikWM không trả về video HD hoặc SD.", "SNVideo")
-                        stop()
-                    }
-                }
-            item "Video tải nhanh":
-                if @sdURL {
-                    downloadAndSaveVideo(@sdURL, "Đã lưu video SD vào Ảnh.")
-                } else {
-                    alert("TikWM không trả về video SD.", "SNVideo")
-                    stop()
-                }
-            item "Hủy":
-                stop()
-        }
-    }
+    showNotification(@videoResultLabel, "SNVideo")
 }

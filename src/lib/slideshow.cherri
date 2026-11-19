@@ -1,46 +1,64 @@
-// Slideshow pipeline: download and save one image at a time.
+// Download and save one slideshow image at a time.
 
-function chooseAndSaveSlideshow(variable images, dictionary data, bool audioEnabled) {
-    @imageCount = count(@images)
-    @audioValue = @data['music']
-    @mediaIDValue = @data['id']
-    @audioURL = "{@audioValue}"
-    @mediaID = "{@mediaIDValue}"
+@imageCount = count(@images)
+@audioValue = @data['music']
+@mediaIDValue = @data['id']
+@audioURL = "{@audioValue}"
+@mediaID = "{@mediaIDValue}"
 
-    menu "Đã tìm thấy {@imageCount} ảnh" {
-        item "Tải tất cả ảnh":
-            @savedCount = 0
-            @failedCount = 0
+menu "Đã tìm thấy {@imageCount} ảnh" {
+    item "Tải tất cả ảnh":
+        @savedCount = 0
+        @failedCount = 0
 
-            for imageItem in @images {
-                @imageURL = trimWhitespace("{@imageItem}")
-                @validImageURL = isHTTPSURL(@imageURL)
+        for imageItem in @images {
+            @imageURL = trimWhitespace("{@imageItem}")
+            @validImageURL = false
 
-                if @validImageURL == "1" {
-                    @imageFile = downloadURL(@imageURL)
-                    savePhoto(@imageFile)
-                    @savedCount += 1
-                } else {
-                    @failedCount += 1
+            if @imageURL {
+                @imageSchemeValue = getURLDetail(@imageURL, "Scheme")
+                @imageHostValue = getURLDetail(@imageURL, "Host")
+                @imageScheme = lowercase("{@imageSchemeValue}")
+                @imageHost = lowercase("{@imageHostValue}")
+                if @imageScheme == "https" && @imageHost {
+                    @validImageURL = true
                 }
             }
 
-            if @failedCount > 0 {
-                showNotification("Đã lưu {@savedCount}/{@imageCount} ảnh; bỏ qua {@failedCount} URL không hợp lệ.", "SNVideo")
+            if @validImageURL == true {
+                @imageFile = downloadURL(@imageURL)
+                savePhoto(@imageFile)
+                @savedCount += 1
             } else {
-                showNotification("Đã lưu {@savedCount} ảnh vào Ảnh.", "SNVideo")
+                @failedCount += 1
             }
-        item "Hủy":
-            stop()
-    }
-
-    @audioValid = isHTTPSURL(@audioURL)
-    if @audioEnabled == true && @audioValid == "1" {
-        menu "Bạn có muốn lưu nhạc nền?" {
-            item "Lưu âm thanh":
-                saveAudio(@audioURL, @mediaID)
-            item "Không, hoàn tất":
-                nothing()
         }
+
+        if @failedCount > 0 {
+            showNotification("Đã lưu {@savedCount}/{@imageCount} ảnh; bỏ qua {@failedCount} URL không hợp lệ.", "SNVideo")
+        } else {
+            showNotification("Đã lưu {@savedCount} ảnh vào Ảnh.", "SNVideo")
+        }
+    item "Hủy":
+        stop()
+}
+
+@audioValid = false
+if @audioURL {
+    @audioSchemeValue = getURLDetail(@audioURL, "Scheme")
+    @audioHostValue = getURLDetail(@audioURL, "Host")
+    @audioScheme = lowercase("{@audioSchemeValue}")
+    @audioHost = lowercase("{@audioHostValue}")
+    if @audioScheme == "https" && @audioHost {
+        @audioValid = true
+    }
+}
+
+if @audioEnabled == true && @audioValid == true {
+    menu "Bạn có muốn lưu nhạc nền?" {
+        item "Lưu âm thanh":
+            @shouldSaveAudio = true
+        item "Không, hoàn tất":
+            nothing()
     }
 }

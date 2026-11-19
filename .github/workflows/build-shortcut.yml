@@ -55,6 +55,7 @@ jobs:
             --no-ansi
           test -f src/SNVideo_unsigned.shortcut
           mv src/SNVideo_unsigned.shortcut build/SNVideo.unsigned.shortcut
+          python3 scripts/verify_shortcut.py build/SNVideo.unsigned.shortcut
 
   build-macos:
     name: Build signed Shortcut

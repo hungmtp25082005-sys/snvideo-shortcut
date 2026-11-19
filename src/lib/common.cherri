@@ -1,32 +1,13 @@
-// Shared URL validation.
+// Normalize and validate the selected input URL in the caller's flow.
 
-function isHTTPSURL(text candidate): text {
-    @trimmedCandidate = trimWhitespace(@candidate)
+@trimmedURL = trimWhitespace(@selectedURL)
+@cleanURL = replaceText("#.*$", "", @trimmedURL, true, true)
+@cleanSchemeValue = getURLDetail(@cleanURL, "Scheme")
+@cleanHostValue = getURLDetail(@cleanURL, "Host")
+@cleanScheme = lowercase("{@cleanSchemeValue}")
+@cleanHost = lowercase("{@cleanHostValue}")
 
-    if !@trimmedCandidate {
-        output("0")
-    } else {
-        @candidateSchemeValue = getURLDetail(@trimmedCandidate, "Scheme")
-        @candidateHostValue = getURLDetail(@trimmedCandidate, "Host")
-        @candidateScheme = lowercase("{@candidateSchemeValue}")
-        @candidateHost = lowercase("{@candidateHostValue}")
-
-        if @candidateScheme == "https" && @candidateHost {
-            output("1")
-        } else {
-            output("0")
-        }
-    }
-}
-
-function normalizeInputURL(text candidate): text {
-    @trimmedURL = trimWhitespace(@candidate)
-    @withoutFragment = replaceText("#.*$", "", @trimmedURL, true, true)
-    @validHTTPS = isHTTPSURL(@withoutFragment)
-
-    if @validHTTPS == "1" {
-        output("{@withoutFragment}")
-    } else {
-        output("")
-    }
+if @cleanScheme != "https" || !@cleanHost {
+    alert("SNVideo chỉ chấp nhận URL HTTPS hợp lệ.", "SNVideo")
+    stop()
 }

@@ -1,47 +1,55 @@
-// TikWM request, response contract validation, and content classification.
+// TikWM request, response validation, classification, and media dispatch.
 
-function processTikTok(text cleanURL, text tikwmEndpoint, bool audioEnabled) {
-    showNotification("SNVideo đang xử lý…", "SNVideo", false)
+showNotification("SNVideo đang xử lý…", "SNVideo", false)
+@shouldSaveAudio = false
+@audioURL = ""
+@mediaID = ""
 
-    // Encode the nested TikTok URL exactly once before string interpolation.
-    @encodedURL = urlEncode(@cleanURL)
-    @apiURL = "{@tikwmEndpoint}?url={@encodedURL}&hd=1"
-    @rawResponse = downloadURL(@apiURL)
-    @response = getDictionary(@rawResponse)
+// Encode the nested TikTok URL exactly once before string interpolation.
+@encodedURL = urlEncode(@cleanURL)
+@apiURL = "{TIKWM_ENDPOINT}?url={@encodedURL}&hd=1"
+@rawResponse = downloadURL(@apiURL)
+@response = getDictionary(@rawResponse)
 
-    if !@response {
-        alert("TikWM không trả về JSON có thể đọc được.", "SNVideo")
-        stop()
+if !@response {
+    alert("TikWM không trả về JSON có thể đọc được.", "SNVideo")
+    stop()
+}
+
+@responseCodeValue = @response['code']
+@responseCode = "{@responseCodeValue}"
+if @responseCode != "0" {
+    alert("TikWM không xử lý được liên kết này. Hãy thử lại hoặc mở liên kết trong Safari rồi chia sẻ lại.", "SNVideo")
+    stop()
+}
+
+@dataValue = @response['data']
+if !@dataValue {
+    alert("Phản hồi TikWM thiếu trường data.", "SNVideo")
+    stop()
+}
+
+@data = getDictionary(@dataValue)
+if !@data {
+    alert("Trường data của TikWM không phải dictionary hợp lệ.", "SNVideo")
+    stop()
+}
+
+@images = @data['images']
+@isSlideshow = false
+if @images {
+    @imageCount = count(@images)
+    if @imageCount > 0 {
+        @isSlideshow = true
     }
+}
 
-    @responseCodeValue = @response['code']
-    @responseCode = "{@responseCodeValue}"
-    if @responseCode != "0" {
-        alert("TikWM không xử lý được liên kết này. Hãy thử lại hoặc mở liên kết trong Safari rồi chia sẻ lại.", "SNVideo")
-        stop()
-    }
+if @isSlideshow == true {
+    #include 'lib/slideshow.cherri'
+} else {
+    #include 'lib/video.cherri'
+}
 
-    @dataValue = @response['data']
-    if !@dataValue {
-        alert("Phản hồi TikWM thiếu trường data.", "SNVideo")
-        stop()
-    }
-
-    @data = getDictionary(@dataValue)
-    if !@data {
-        alert("Trường data của TikWM không phải dictionary hợp lệ.", "SNVideo")
-        stop()
-    }
-
-    @images = @data['images']
-    if @images {
-        @imageCount = count(@images)
-        if @imageCount > 0 {
-            chooseAndSaveSlideshow(@images, @data, @audioEnabled)
-        } else {
-            chooseAndSaveVideo(@data, @audioEnabled)
-        }
-    } else {
-        chooseAndSaveVideo(@data, @audioEnabled)
-    }
+if @shouldSaveAudio == true {
+    #include 'lib/audio.cherri'
 }
