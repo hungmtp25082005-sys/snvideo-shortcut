@@ -95,12 +95,22 @@ class SourceContractTests(unittest.TestCase):
     def test_constant_dictionary_keys_use_get_value_actions(self):
         self.assertIsNone(re.search(r"@[A-Za-z0-9_]+\['[^']+'\]", ALL_SOURCE))
 
-    def test_slideshow_is_sequential_without_fixed_delay(self):
+    def test_slideshow_selects_labels_then_saves_sequentially(self):
+        choice_position = SLIDESHOW.index("chooseFromList(@imageLabels")
         loop_position = SLIDESHOW.index("for imageItem in @images")
         download_position = SLIDESHOW.index("downloadURL(@imageURL)")
         save_position = SLIDESHOW.index("savePhoto(@imageFile")
+        self.assertLess(choice_position, loop_position)
         self.assertLess(loop_position, download_position)
         self.assertLess(download_position, save_position)
+        self.assertIn('"Image0{@labelIndex}"', SLIDESHOW)
+        self.assertIn('"Image0{@imageIndex}"', SLIDESHOW)
+        self.assertIn(
+            'chooseFromList(@imageLabels, "Chọn ảnh cần tải", true, true)',
+            SLIDESHOW,
+        )
+        self.assertIn("@selectedLabelSet contains @imageSelectionToken", SLIDESHOW)
+        self.assertNotIn("quicklook(", SLIDESHOW)
         self.assertNotIn("wait(", SLIDESHOW)
 
     def test_update_flow_is_disabled_until_configured_and_allowlisted(self):

@@ -1,4 +1,4 @@
-// Download and save one slideshow image at a time.
+// Let the user choose image labels, then download selected images one at a time.
 
 @imageCount = count(@images)
 @audioValue = getValue(@data, "music")
@@ -6,41 +6,64 @@
 @audioURL = "{@audioValue}"
 @mediaID = "{@mediaIDValue}"
 
-menu "Đã tìm thấy {@imageCount} ảnh" {
-    item "Tải tất cả ảnh":
-        @savedCount = 0
-        @failedCount = 0
+@imageLabels: array
+repeat labelIndex for @imageCount {
+    @imageLabel = "Image{@labelIndex}"
+    if @labelIndex < 10 {
+        @imageLabel = "Image0{@labelIndex}"
+    }
+    @imageLabels += @imageLabel
+}
 
-        for imageItem in @images {
-            @imageURL = trimWhitespace("{@imageItem}")
-            @validImageURL = false
+@selectedImageLabels = chooseFromList(@imageLabels, "Chọn ảnh cần tải", true, true)
+if !@selectedImageLabels {
+    alert("Bạn chưa chọn ảnh nào.", "SNVideo")
+    stop()
+}
 
-            if @imageURL {
-                @imageSchemeValue = getURLDetail(@imageURL, "Scheme")
-                @imageHostValue = getURLDetail(@imageURL, "Host")
-                @imageScheme = lowercase("{@imageSchemeValue}")
-                @imageHost = lowercase("{@imageHostValue}")
-                if @imageScheme == "https" && @imageHost {
-                    @validImageURL = true
-                }
-            }
+@selectedImageCount = count(@selectedImageLabels)
+@selectedLabelsJoined = joinText(@selectedImageLabels, "|")
+@selectedLabelSet = "|{@selectedLabelsJoined}|"
+@savedCount = 0
+@failedCount = 0
+@imageIndex = 0
 
-            if @validImageURL == true {
-                @imageFile = downloadURL(@imageURL)
-                savePhoto(@imageFile)
-                @savedCount += 1
-            } else {
-                @failedCount += 1
+for imageItem in @images {
+    @imageIndex += 1
+    @imageLabel = "Image{@imageIndex}"
+    if @imageIndex < 10 {
+        @imageLabel = "Image0{@imageIndex}"
+    }
+    @imageSelectionToken = "|{@imageLabel}|"
+
+    if @selectedLabelSet contains @imageSelectionToken {
+        @imageURL = trimWhitespace("{@imageItem}")
+        @validImageURL = false
+
+        if @imageURL {
+            @imageSchemeValue = getURLDetail(@imageURL, "Scheme")
+            @imageHostValue = getURLDetail(@imageURL, "Host")
+            @imageScheme = lowercase("{@imageSchemeValue}")
+            @imageHost = lowercase("{@imageHostValue}")
+            if @imageScheme == "https" && @imageHost {
+                @validImageURL = true
             }
         }
 
-        if @failedCount > 0 {
-            showNotification("Đã lưu {@savedCount}/{@imageCount} ảnh; bỏ qua {@failedCount} URL không hợp lệ.", "SNVideo")
+        if @validImageURL == true {
+            @imageFile = downloadURL(@imageURL)
+            savePhoto(@imageFile)
+            @savedCount += 1
         } else {
-            showNotification("Đã lưu {@savedCount} ảnh vào Ảnh.", "SNVideo")
+            @failedCount += 1
         }
-    item "Hủy":
-        stop()
+    }
+}
+
+if @failedCount > 0 {
+    showNotification("Đã lưu {@savedCount}/{@selectedImageCount} ảnh đã chọn; bỏ qua {@failedCount} URL không hợp lệ.", "SNVideo")
+} else {
+    showNotification("Đã lưu {@savedCount} ảnh đã chọn vào Ảnh.", "SNVideo")
 }
 
 @audioValid = false

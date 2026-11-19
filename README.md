@@ -41,7 +41,7 @@ Phiên bản đầu tiên phải thực hiện ổn định các tác vụ sau:
    - cho phép tải video SD;
    - cho phép lưu âm thanh sau khi xác minh đúng URL/định dạng;
    - nhận diện Photo Slideshow trước khi đọc `hdplay`/`play`;
-   - ở MVP đầu tiên, cho phép tải toàn bộ album tuần tự hoặc hủy; các chế độ duyệt/chọn lẻ được bổ sung sau khi Gate C đạt.
+   - với bài ảnh, hiển thị danh sách chọn nhiều `Image01`, `Image02`, ...; mặc định tick tất cả và chỉ tải tuần tự các mục còn được chọn, không tải thumbnail xem trước.
 5. Với nền tảng khác:
    - sao chép URL đã chuẩn hóa;
    - mở trang Cobalt để người dùng tự tiếp tục.
@@ -139,8 +139,8 @@ flowchart TD
     ValidateResponse -- Không --> TikWMError[Thông báo lỗi logic nếu luồng vẫn còn chạy]
     ValidateResponse -- Có --> ContentType{Có danh sách images không rỗng?}
 
-    ContentType -- Có --> AlbumMenu{MVP: Tải tất cả / Hủy}
-    AlbumMenu --> DownloadSelected[Tải và lưu tuần tự, không giữ toàn bộ ảnh trong RAM]
+    ContentType -- Có --> AlbumMenu{Danh sách Image01... chọn nhiều}
+    AlbumMenu --> DownloadSelected[Tải và lưu tuần tự các ảnh được tick, không giữ binary cả album]
     DownloadSelected --> OptionalAudio{Người dùng muốn tải audio?}
     OptionalAudio -- Có --> SaveAudio[Lưu hoặc chia sẻ audio]
     OptionalAudio -- Không --> AlbumResult[Thông báo kết quả]
@@ -357,34 +357,24 @@ Không được gọi video là “HD” nếu thực tế đã fallback sang `p
 
 ### 6.3. Module C — TikTok Photo Slideshow
 
-Slideshow chưa được xác minh trên thiết bị. Để giảm rủi ro khi bắt đầu triển khai, chia thành hai mức.
-
-#### Phạm vi MVP đầu tiên
+Slideshow đã tải được trên thiết bị; luồng chọn ảnh vẫn phải vượt Gate C trước khi quảng bá ổn định.
 
 1. Kiểm tra `data.images` tồn tại và có ít nhất một phần tử trước khi đọc `hdplay` hoặc `play`.
-2. Lọc bỏ phần tử không phải URL HTTPS hợp lệ.
-3. Hiển thị menu:
-   - `Tải tất cả ảnh`
-   - `Hủy`
-4. Khi tải tất cả:
-   - lặp từng URL;
-   - tải một ảnh;
-   - lưu ngay vào Photos;
+2. Tạo danh sách nhãn theo đúng thứ tự URL: `Image01`, `Image02`, ...; một bài chỉ có một ảnh vẫn hiển thị `Image01`.
+3. Hiển thị `Choose from List` ở chế độ chọn nhiều và tick tất cả mặc định. Người dùng bỏ tick các ảnh không muốn; không tải thumbnail hoặc Quick Look.
+4. Nếu không còn mục nào được chọn, thông báo và dừng.
+5. Khi tải:
+   - lặp lại danh sách URL gốc với cùng chỉ số/nhãn;
+   - chỉ xử lý nhãn nằm trong tập đã chọn;
+   - xác thực URL HTTPS, tải một ảnh và lưu ngay vào Photos;
    - ghi đè biến media trước vòng tiếp theo;
-   - tăng `Saved_Count` hoặc `Failed_Count` nếu runtime cho phép tiếp tục sau lỗi;
+   - tăng `Saved_Count` hoặc `Failed_Count`;
    - không tạo List chứa binary của toàn album.
-5. Không thêm độ trễ cố định `0.3s` theo giả định. Chỉ thêm delay nếu thử nghiệm cho thấy Photos/CDN cần khoảng nghỉ và ghi lại lý do.
-6. Sau phần ảnh, chỉ hỏi tải audio khi khóa URL audio đã được xác minh. Audio luôn nằm ở menu riêng.
-7. Báo kết quả thực tế: `Đã lưu N ảnh` hoặc `Đã lưu X/N ảnh`.
+6. Không thêm độ trễ cố định nếu chưa có bằng chứng cần thiết.
+7. Sau phần ảnh, chỉ hỏi tải audio khi khóa URL audio đã được xác minh. Audio luôn nằm ở menu riêng.
+8. Báo kết quả theo số mục đã chọn: `Đã lưu N ảnh đã chọn` hoặc `Đã lưu X/N ảnh đã chọn`.
 
-#### Sau khi MVP slideshow hoạt động ổn định
-
-Gate C có thể bổ sung:
-
-- **Duyệt từng ảnh:** tải một ảnh, Quick Look, rồi chọn `Lưu`, `Bỏ qua` hoặc `Dừng`;
-- **Chọn theo số thứ tự:** dictionary `Ảnh NN -> URL` hoặc hai danh sách song song, kiểm thử lựa chọn không liên tiếp.
-
-Không đặt ngưỡng cố định như “dưới 8 ảnh” nếu chưa có dữ liệu trên thiết bị thật. Bản beta đầu tiên không bị chặn chỉ vì hai chế độ nâng cao chưa có; bản phát hành nào quảng bá “chọn ảnh” phải vượt đầy đủ Gate C trước khi công bố tính năng đó.
+Chế độ preview từng ảnh không thuộc yêu cầu hiện tại. Không đặt ngưỡng số ảnh cố định nếu chưa có dữ liệu thử nghiệm.
 
 ### 6.4. Module D — Phân luồng hostname và nền tảng khác
 
@@ -638,11 +628,11 @@ Vì vậy:
 
 - [ ] Album có một ảnh.
 - [ ] Album có nhiều ảnh.
-- [ ] Chế độ `Tải tất cả` lưu tuần tự và báo đúng tổng số.
-- [ ] Chế độ `Duyệt từng ảnh` chỉ giữ một ảnh preview tại một thời điểm.
-- [ ] Trong chế độ duyệt, `Lưu`, `Bỏ qua` và `Dừng` hoạt động đúng.
-- [ ] Chọn theo số với các ảnh không liên tiếp như 01, 03, 07 không làm lệch ánh xạ.
-- [ ] Không chọn ảnh nào.
+- [ ] Danh sách hiển thị đúng `Image01`, `Image02`, ... và tick tất cả mặc định.
+- [ ] Bài một ảnh vẫn hiển thị danh sách với `Image01`.
+- [ ] Chọn các ảnh không liên tiếp như 01, 03, 07 tải đúng URL, không lệch ánh xạ.
+- [ ] Bỏ chọn một số ảnh chỉ tải các mục còn tick và báo đúng tổng đã chọn.
+- [ ] Không chọn ảnh nào thì thông báo và dừng.
 - [ ] Một URL ảnh không hợp lệ.
 - [ ] Một ảnh tải thất bại giữa vòng lặp.
 - [ ] Có audio và người dùng chọn tải qua menu riêng.
@@ -710,17 +700,15 @@ Build hiện tại mở rộng có điều kiện cho `vt.tiktok.com`/`vm.tiktok
 Điều kiện cho MVP slideshow:
 
 - [ ] `images` được phát hiện trước khi đọc URL video.
-- [ ] `Tải tất cả` xử lý tuần tự và không giữ toàn bộ binary trong RAM.
-- [ ] Kết quả hiển thị đúng số ảnh đã lưu.
+- [ ] Danh sách `ImageNN` ánh xạ đúng theo thứ tự `images` và cho phép chọn nhiều mục.
+- [ ] Tất cả mục được tick mặc định; bỏ tick không làm lệch URL.
+- [ ] Chọn không liên tiếp xử lý tuần tự và không giữ toàn bộ binary trong RAM.
+- [ ] Kết quả hiển thị đúng số ảnh đã chọn/lưu.
 - [ ] Audio được hỏi riêng và chỉ khi URL audio hợp lệ.
 - [ ] Album nhiều ảnh được thử từ Share Sheet mà không bị iOS kill.
-
-Điều kiện bổ sung trước khi quảng bá tính năng chọn ảnh nâng cao:
-
-- [ ] `Duyệt từng ảnh` cung cấp preview từng mục và ghi đè biến trước mục kế tiếp.
-- [ ] Nhãn `Ảnh NN` ánh xạ đúng URL khi chọn nhiều mục.
-- [ ] Chọn không liên tiếp không gây lệch chỉ số.
 - [ ] Không áp dụng ngưỡng số ảnh cố định trước khi có dữ liệu thử nghiệm.
+
+Preview/Quick Look không phải điều kiện của Gate C hiện tại.
 
 ### Gate D — Độ bền
 
@@ -790,11 +778,11 @@ Không dùng cùng một biến cho dictionary API và binary media. Đặt tên
 #### Giai đoạn 3 — Slideshow MVP
 
 - [ ] Thử một bài TikTok ảnh thật và ghi lại schema `images`/audio.
-- [ ] Menu đầu tiên chỉ gồm `Tải tất cả ảnh` và `Hủy`.
-- [ ] Tải–lưu tuần tự từng ảnh; không gom binary cả album.
+- [ ] Tạo danh sách `Image01...` chọn nhiều, tick tất cả mặc định và không tải preview.
+- [ ] Chỉ tải–lưu tuần tự các ảnh còn được chọn; không gom binary cả album.
+- [ ] Kiểm thử chọn không liên tiếp không làm lệch URL.
 - [ ] Không thêm delay cố định nếu chưa có bằng chứng cần thiết.
-- [ ] Báo số ảnh đã lưu.
-- [ ] Sau khi ổn định mới triển khai duyệt/chọn lẻ theo Gate C.
+- [ ] Báo số ảnh đã chọn và đã lưu.
 
 #### Giai đoạn 4 — Chạy trực tiếp và cập nhật
 
@@ -829,7 +817,7 @@ Các mục sau phải được điền bằng bằng chứng từ prototype, kh�
 | Fallback `hdplay -> play` | `THIẾT KẾ ĐÃ CHỐT, CHƯA TEST` |
 | Schema slideshow `images` | `TBD — ưu tiên kiểm thử tiếp theo` |
 | Khóa và định dạng URL audio | `TBD — đã thấy music_info nhưng chưa xác nhận URL media` |
-| Cách triển khai chọn slideshow nâng cao | `HOÃN SAU MVP tải tất cả` |
+| Cách chọn ảnh slideshow | `DANH SÁCH ImageNN CHỌN NHIỀU; tick tất cả mặc định; không preview` |
 | TikWM có yêu cầu header đặc biệt trong trường hợp khác không | `TBD; ca POC không cần header bổ sung được ghi nhận` |
 | Ngưỡng album cần cảnh báo theo dung lượng/thiết bị | `TBD — không dùng số lượng ảnh tùy ý` |
 | Kiểm tra cập nhật | `MENU RIÊNG; chi tiết triển khai còn TBD` |
