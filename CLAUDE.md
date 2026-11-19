@@ -25,7 +25,7 @@ python -m unittest discover -s tests -p 'test_*.py' -v
 Run one test:
 
 ```bash
-python -m unittest tests.test_source_contract.SourceContractTests.test_tikwm_endpoint_and_single_encoding_stage -v
+python -m unittest tests.test_source_contract.SourceContractTests.test_tikwm_short_links_expand_before_single_encoding_stage -v
 ```
 
 Validate Cherri syntax without signing (Linux/macOS):
@@ -56,7 +56,7 @@ There is no separate linter configured. The required automated checks are the Py
 
 The modules under `src/lib/` form the processing pipeline:
 
-1. Shared URL normalization accepts HTTPS, trims outer whitespace, and removes fragments without expanding short links.
+1. Shared URL normalization accepts HTTPS, trims outer whitespace, and removes fragments. Immediately before TikWM, only exact `vt.tiktok.com`/`vm.tiktok.com` hosts are expanded once and the resulting HTTPS TikTok hostname is validated again.
 2. TikWM input is URL-encoded exactly once, then the response contract checks `code` and `data`.
 3. Content classification checks `data.images` before reading video keys.
 4. Video selection implements `hdplay -> play` fallback; slideshow processing downloads and saves one image at a time rather than retaining album binaries.

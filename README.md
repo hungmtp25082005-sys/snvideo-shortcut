@@ -15,7 +15,7 @@ SNVideo là một iOS Shortcut hỗ trợ nhận liên kết từ Share Sheet ho
 Đã xác nhận trên iPhone thật qua TikTok Share Sheet:
 
 - action **Lấy URL từ Đầu vào phím tắt** bóc đúng short link `https://vt.tiktok.com/...`;
-- short link được gửi trực tiếp đến TikWM bằng query đã encode, không cần `Expand URL`;
+- POC ban đầu gửi trực tiếp short link đến TikWM thành công; lần chạy hiện tại nhận application soft error, nên build chẩn đoán mở rộng có điều kiện `vt.tiktok.com`/`vm.tiktok.com` trước khi gọi API và vẫn cần xác minh lại trên iPhone;
 - TikWM trả JSON với `code = 0` và các khóa quan sát được gồm `title`, `hdplay`, `play`, `music_info`;
 - URL `hdplay` tải được video MP4 không logo;
 - iOS hỏi quyền kết nối đến CDN ở lần đầu trên thiết bị thử nghiệm;
@@ -195,13 +195,13 @@ Thiết lập Share Sheet phải được ghi lại khi triển khai:
 `Clean_URL` phải trải qua các bước:
 
 1. Loại khoảng trắng và ký tự xuống dòng ở đầu/cuối.
-2. Không chạy `Expand URL` mặc định. Ca thử trên iPhone đã xác nhận short link `vt.tiktok.com` được TikWM xử lý trực tiếp; `vm.tiktok.com` vẫn phải kiểm thử riêng.
+2. Module đầu vào không mở rộng URL. Ngay trước TikWM, chỉ hostname chính xác `vt.tiktok.com` hoặc `vm.tiktok.com` mới chạy `Expand URL`; URL TikTok đầy đủ không chạy action này.
 3. Chỉ chấp nhận scheme `https` trong MVP.
 4. Tách hostname và chuyển thành chữ thường.
 5. Bỏ fragment `#...` nếu prototype xác minh fragment không cần cho nội dung.
 6. Giữ query parameter khi chưa chứng minh rằng việc loại bỏ không làm hỏng liên kết.
 7. Chèn URL TikTok vào tham số `url` bằng cơ chế encode đúng **một tầng**.
-8. Không triển khai `Expand URL` tự động trong MVP. Nếu TikWM không xử lý được short link, hướng dẫn người dùng mở link trong Safari rồi chia sẻ lại URL đích; chỉ bổ sung fallback tự động ở phiên bản sau nếu có bằng chứng ổn định.
+8. Sau khi mở rộng short link, xác thực URL đích vẫn dùng HTTPS và hostname bằng `tiktok.com` hoặc kết thúc chính xác bằng `.tiktok.com`; nếu không đạt thì dừng trước TikWM. Action này có thể gây system hard error và hành vi phải được kiểm thử trên iPhone.
 
 Không nối trực tiếp URL thô chứa `?` hoặc `&` theo dạng:
 
@@ -337,11 +337,11 @@ Không được gọi video là “HD” nếu thực tế đã fallback sang `p
 ### 6.2. Module B — TikTok video
 
 1. Hiển thị phản hồi không chặn luồng: `SNVideo đang xử lý…` để tránh người dùng bấm lại trong thời gian chờ quan sát được 2–4 giây.
-2. Giữ nguyên `Clean_URL`, kể cả short link TikTok hợp lệ.
-3. Đưa `Clean_URL` vào tham số `url` bằng đúng một lớp query encoding; ca thử `vt.tiktok.com` đã thành công, nhưng vẫn tránh vừa encode thủ công vừa để URL builder encode lần nữa.
+2. Đặt `Request_URL = Clean_URL`; nếu host chính xác là `vt.tiktok.com` hoặc `vm.tiktok.com`, mở rộng URL một lần và xác thực lại scheme/hostname TikTok của URL đích.
+3. Đưa `Request_URL` vào tham số `url` bằng đúng một lớp query encoding; tránh vừa encode thủ công vừa để URL builder encode lần nữa.
 4. Tạo `API_URL` và gọi TikWM.
 5. Kiểm tra phản hồi theo Mục 5.3 nếu action mạng vẫn trả quyền điều khiển cho Shortcut.
-6. Nếu TikWM trả application soft error cho short link, không tự chạy `Expand URL` trong MVP; hướng dẫn người dùng mở link trong Safari rồi chia sẻ lại hoặc thử Cobalt.
+6. Nếu TikWM trả application soft error, hiển thị giá trị thật của `code` và `msg` để chẩn đoán; không tự retry hoặc mở rộng lần thứ hai.
 7. **Phân loại `data.images` trước khi đọc `hdplay`/`play`.** Nếu `images` có dữ liệu, chuyển sang Module C.
 8. Nếu là video, hiển thị menu:
    - `Video chất lượng cao`
@@ -579,7 +579,7 @@ Vì vậy:
 | Im lặng 2–4 giây | Người dùng tưởng bị treo và bấm lặp | Phản hồi `Đang xử lý` và thông báo chỉ sau khi lưu xong |
 | TikWM rate-limit/ngừng hoạt động | Không tải được TikTok | Thông báo thử lại; không retry liên tục; cân nhắc handoff Cobalt thủ công |
 | URL thô hoặc encode sai tầng | API nhận thiếu query của TikTok hoặc nhận chuỗi `%25` do encode hai lần | Đóng gói query đúng một lần và kiểm tra URL request cuối cùng |
-| Expand URL treo hoặc bị chặn | Shortcut chậm, dừng hoặc bị iOS kill | Loại Expand URL tự động khỏi MVP; short link `vt.tiktok.com` đã chạy trực tiếp |
+| Expand URL treo hoặc bị chặn | Shortcut chậm, dừng hoặc bị iOS kill | Chỉ chạy cho hostname chính xác `vt.tiktok.com`/`vm.tiktok.com`; xác thực URL đích; ghi nhận đây vẫn có thể là system hard error trên iOS |
 | Kiểm tra domain bằng chuỗi | Nhận nhầm domain giả | Tách hostname và so khớp suffix có ranh giới |
 | Đọc Clipboard bất ngờ | Popup quyền dán gây khó hiểu | Ưu tiên Share Sheet và hỏi trước khi đọc Clipboard |
 | Manifest lỗi | Shortcut dừng trước khi tải | Tách cập nhật khỏi luồng chính MVP |
@@ -612,8 +612,9 @@ Vì vậy:
 - [ ] Người dùng hủy chọn URL.
 - [ ] URL dùng `http` thay vì `https`.
 - [ ] Domain giả `tiktok.com.example.org` bị từ chối.
-- [x] Short link `vt.tiktok.com` được TikWM xử lý trực tiếp mà không Expand URL.
-- [ ] Short link `vm.tiktok.com` được thử trực tiếp mà không Expand URL.
+- [x] POC trước đây xác nhận `vt.tiktok.com` từng được TikWM xử lý trực tiếp.
+- [ ] Luồng hiện tại mở rộng `vt.tiktok.com`, xác thực URL đích và TikWM trả `code = 0`.
+- [ ] Luồng hiện tại mở rộng `vm.tiktok.com`, xác thực URL đích và TikWM trả `code = 0`.
 - [ ] URL TikTok có `?_t=...&_r=1` vẫn đến TikWM nguyên vẹn sau một lần decode.
 - [ ] URL đã chứa `%xx` không bị encode thừa thêm một tầng.
 - [ ] URL request cuối cùng không chứa dấu hiệu double encoding ngoài mức cần thiết.
@@ -657,7 +658,7 @@ Vì vậy:
 - [ ] TikWM trả JSON thiếu `data`.
 - [ ] TikWM trả HTML thay JSON.
 - [ ] TikWM phản hồi chậm/rate-limit.
-- [ ] Hậu MVP: nếu khôi phục fallback Expand URL, thử redirect thường, redirect nhiều tầng và endpoint không phản hồi trước khi phát hành.
+- [ ] Với short link, thử redirect thường, redirect nhiều tầng, URL đích không phải TikTok và endpoint không phản hồi; ghi nhận trường hợp nào trở thành system hard error.
 
 ### 12.5. Handoff và cập nhật
 
@@ -680,7 +681,8 @@ Không đánh dấu đặc tả hoàn tất cho đến khi vượt qua các cổ
 ### Gate A — Khả năng của Shortcuts (`PARTIAL`)
 
 - [x] **Lấy URL từ Đầu vào phím tắt** bóc đúng `vt.tiktok.com` từ TikTok Share Sheet.
-- [x] Short link `vt.tiktok.com` được gửi trực tiếp mà không Expand URL.
+- [x] POC trước đây xác nhận `vt.tiktok.com` từng được gửi trực tiếp thành công.
+- [ ] Xác minh build hiện tại mở rộng `vt.tiktok.com`/`vm.tiktok.com`, kiểm tra URL đích và không treo Share Sheet.
 - [x] Query encode của ca POC tạo request được TikWM chấp nhận.
 - [x] **Lưu vào album ảnh** lưu được MP4 vào Photos/Recents.
 - [x] Ghi nhận popup quyền kết nối CDN lần đầu trên thiết bị thử nghiệm.
@@ -690,7 +692,7 @@ Không đánh dấu đặc tả hoàn tất cho đến khi vượt qua các cổ
 - [ ] Xác minh hành vi Clipboard sau khi người dùng chọn menu và khi từ chối quyền dán.
 - [ ] Xác minh hành vi khi action mạng lỗi; phân biệt system hard error và application soft error.
 
-Không triển khai Expand URL fallback trong MVP, vì đường `vt.tiktok.com -> TikWM` đã hoạt động và fallback chưa có bằng chứng ổn định.
+Build hiện tại mở rộng có điều kiện cho `vt.tiktok.com`/`vm.tiktok.com` trước TikWM do lần chạy mới nhận application soft error. Đây là thay đổi chẩn đoán chưa vượt Gate A; nếu action gây hard error hoặc treo, phải ghi nhận và đánh giá lại.
 
 ### Gate B — Hợp đồng TikWM (`PARTIAL — VIDEO HAPPY PATH PASSED`)
 
@@ -734,7 +736,7 @@ Không triển khai Expand URL fallback trong MVP, vì đường `vt.tiktok.com 
 ### 14.1. Baseline đã có
 
 - [x] TikTok Share Sheet cung cấp short link hợp lệ.
-- [x] Short link `vt.tiktok.com` gọi TikWM thành công mà không Expand URL.
+- [x] POC trước đây gọi TikWM thành công trực tiếp với `vt.tiktok.com`.
 - [x] POC đọc được `hdplay` và tải video.
 - [x] Video MP4 được lưu vào Photos/Recents.
 
@@ -747,7 +749,8 @@ Không chỉnh trực tiếp POC thành một khối dài khó kiểm soát. Khi
 | `URL_List` | Danh sách URL | Kết quả bóc URL từ Share Sheet/Clipboard |
 | `Clean_URL` | URL/Text | URL duy nhất đã chọn và xác thực |
 | `URL_Host` | Text chữ thường | Phân nhánh TikTok/Cobalt |
-| `Encoded_URL` | Text | `Clean_URL` được đóng gói đúng một tầng cho query |
+| `Request_URL` | URL/Text | `Clean_URL` hoặc URL đích sau khi mở rộng short link và xác thực lại |
+| `Encoded_URL` | Text | `Request_URL` được đóng gói đúng một tầng cho query |
 | `API_URL` | URL | Endpoint TikWM hoàn chỉnh |
 | `API_Response` | Dictionary | JSON TikWM |
 | `TikWM_Code` | Number | Mã logic từ API |
@@ -775,7 +778,7 @@ Không dùng cùng một biến cho dictionary API và binary media. Đặt tên
 #### Giai đoạn 2 — Gia cố video TikTok
 
 - [ ] Hiển thị `SNVideo đang xử lý…` trước request.
-- [ ] Giữ cách encode short link đã thành công trong POC.
+- [ ] Với `vt.tiktok.com`/`vm.tiktok.com`, mở rộng một lần, xác thực URL đích HTTPS/TikTok rồi encode đúng một tầng.
 - [ ] Kiểm tra `code = 0` và lấy `TikWM_Data`.
 - [ ] Lấy `Images` và phân loại slideshow **trước** URL video.
 - [ ] Với video, tạo menu HD/SD/Audio/Hủy.
@@ -819,9 +822,9 @@ Các mục sau phải được điền bằng bằng chứng từ prototype, kh�
 | Phiên bản iOS tối thiểu | `TBD — ghi chính xác phiên bản của thiết bị POC trước beta` |
 | Action nhận URL và lưu Photos | `CONFIRMED — Lấy URL từ Đầu vào phím tắt; Lưu vào album ảnh` |
 | Action lấy hostname, dựng query, Clipboard và lưu audio | `TBD` |
-| `vt.tiktok.com` gọi TikWM không cần Expand URL | `CONFIRMED trên ca POC` |
-| `vm.tiktok.com` gọi TikWM không cần Expand URL | `TBD` |
-| Expand URL fallback | `LOẠI KHỎI MVP; chỉ xem xét lại nếu có nhu cầu và bằng chứng` |
+| `vt.tiktok.com` gọi TikWM trực tiếp | `TỪNG CONFIRMED trên ca POC; lần chạy hiện tại nhận soft error nên đang thử mở rộng có điều kiện` |
+| `vm.tiktok.com` gọi TikWM trực tiếp | `TBD; build hiện tại mở rộng có điều kiện` |
+| Expand URL cho short link | `ĐÃ TRIỂN KHAI CÓ ĐIỀU KIỆN cho vt/vm; CHƯA VƯỢT GATE A trên iPhone` |
 | Hành vi từng loại lỗi mạng/HTTP | `TBD — ghi nhận theo phiên bản iOS; không giả định có try/catch` |
 | Fallback `hdplay -> play` | `THIẾT KẾ ĐÃ CHỐT, CHƯA TEST` |
 | Schema slideshow `images` | `TBD — ưu tiên kiểm thử tiếp theo` |

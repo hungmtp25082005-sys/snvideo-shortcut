@@ -5,8 +5,39 @@ showNotification("SNVideo đang xử lý…", "SNVideo", false)
 @audioURL = ""
 @mediaID = ""
 
-// Encode the nested TikTok URL exactly once before string interpolation.
-@encodedURL = urlEncode(@cleanURL)
+// Expand only TikTok short-link hosts, then validate the redirect target.
+@requestURL = "{@cleanURL}"
+@shouldExpandShortURL = false
+if @urlHost == "vt.tiktok.com" || @urlHost == "vm.tiktok.com" {
+    @shouldExpandShortURL = true
+}
+
+if @shouldExpandShortURL == true {
+    @expandedURLValue = expandURL(@cleanURL)
+    @expandedURL = "{@expandedURLValue}"
+    @expandedSchemeValue = getURLDetail(@expandedURL, "Scheme")
+    @expandedHostValue = getURLDetail(@expandedURL, "Host")
+    @expandedScheme = lowercase("{@expandedSchemeValue}")
+    @expandedHost = lowercase("{@expandedHostValue}")
+    @expandedHostIsTikTok = false
+
+    if @expandedHost == "tiktok.com" {
+        @expandedHostIsTikTok = true
+    }
+    if @expandedHost endsWith ".tiktok.com" {
+        @expandedHostIsTikTok = true
+    }
+
+    if @expandedScheme != "https" || @expandedHostIsTikTok != true {
+        alert("Liên kết rút gọn không chuyển hướng tới URL TikTok HTTPS hợp lệ.", "SNVideo")
+        stop()
+    }
+
+    @requestURL = @expandedURL
+}
+
+// Encode the final TikTok URL exactly once before string interpolation.
+@encodedURL = urlEncode(@requestURL)
 @apiURL = "{TIKWM_ENDPOINT}?url={@encodedURL}&hd=1"
 @rawResponse = downloadURL(@apiURL)
 @response = getDictionary(@rawResponse)
@@ -18,8 +49,10 @@ if !@response {
 
 @responseCodeValue = @response['code']
 @responseCode = "{@responseCodeValue}"
+@responseMsgValue = @response['msg']
+@responseMsg = "{@responseMsgValue}"
 if @responseCode != "0" {
-    alert("TikWM không xử lý được liên kết này. Hãy thử lại hoặc mở liên kết trong Safari rồi chia sẻ lại.", "SNVideo")
+    alert("TikWM lỗi (code {@responseCode}): {@responseMsg}", "SNVideo")
     stop()
 }
 

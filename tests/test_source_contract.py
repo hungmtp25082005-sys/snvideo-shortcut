@@ -67,13 +67,27 @@ class SourceContractTests(unittest.TestCase):
         self.assertLess(route_position, tikwm_position)
         self.assertIn('@urlHost == "tiktok.com"', MAIN)
 
-    def test_tikwm_endpoint_and_single_encoding_stage(self):
+    def test_tikwm_short_links_expand_before_single_encoding_stage(self):
         self.assertIn(
             'const TIKWM_ENDPOINT = "https://www.tikwm.com/api/"', CONFIG
         )
+        expand_position = TIKWM.index("expandURL(@cleanURL)")
+        encode_position = TIKWM.index("urlEncode(@requestURL)")
+        self.assertLess(expand_position, encode_position)
+        self.assertEqual(TIKWM.count("expandURL("), 1)
         self.assertEqual(TIKWM.count("urlEncode("), 1)
+        self.assertIn('@urlHost == "vt.tiktok.com"', TIKWM)
+        self.assertIn('@urlHost == "vm.tiktok.com"', TIKWM)
+        self.assertIn('@expandedScheme != "https"', TIKWM)
         self.assertIn("?url={@encodedURL}&hd=1", TIKWM)
-        self.assertNotIn("expandURL(", ALL_SOURCE)
+
+    def test_tikwm_soft_errors_include_real_code_and_message(self):
+        self.assertIn("@responseMsgValue = @response['msg']", TIKWM)
+        self.assertIn('@responseMsg = "{@responseMsgValue}"', TIKWM)
+        self.assertIn(
+            'alert("TikWM lỗi (code {@responseCode}): {@responseMsg}", "SNVideo")',
+            TIKWM,
+        )
 
     def test_slideshow_is_sequential_without_fixed_delay(self):
         loop_position = SLIDESHOW.index("for imageItem in @images")
