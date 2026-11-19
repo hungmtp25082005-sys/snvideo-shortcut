@@ -81,13 +81,19 @@ class SourceContractTests(unittest.TestCase):
         self.assertIn('@expandedScheme != "https"', TIKWM)
         self.assertIn("?url={@encodedURL}&hd=1", TIKWM)
 
-    def test_tikwm_soft_errors_include_real_code_and_message(self):
-        self.assertIn("@responseMsgValue = @response['msg']", TIKWM)
-        self.assertIn('@responseMsg = "{@responseMsgValue}"', TIKWM)
+    def test_tikwm_soft_errors_include_typed_code_and_message(self):
+        self.assertIn('@responseCodeValue = getValue(@response, "code")', TIKWM)
+        self.assertIn("@responseCode = number(@responseCodeValue)", TIKWM)
+        self.assertIn('@responseMsgValue = getValue(@response, "msg")', TIKWM)
+        self.assertIn("@responseMsg = getText(@responseMsgValue)", TIKWM)
+        self.assertIn("if @responseCode != 0", TIKWM)
         self.assertIn(
             'alert("TikWM lỗi (code {@responseCode}): {@responseMsg}", "SNVideo")',
             TIKWM,
         )
+
+    def test_constant_dictionary_keys_use_get_value_actions(self):
+        self.assertIsNone(re.search(r"@[A-Za-z0-9_]+\['[^']+'\]", ALL_SOURCE))
 
     def test_slideshow_is_sequential_without_fixed_delay(self):
         loop_position = SLIDESHOW.index("for imageItem in @images")

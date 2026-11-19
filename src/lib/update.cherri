@@ -22,7 +22,7 @@ if !@manifestURL {
         stop()
     }
 
-    @remoteBuildValue = @manifest['build']
+    @remoteBuildValue = getValue(@manifest, "build")
     if !@remoteBuildValue {
         alert("Manifest thiếu build.", "SNVideo")
         stop()
@@ -32,7 +32,7 @@ if !@manifestURL {
     @currentBuild = SNVIDEO_BUILD
 
     if @remoteBuild > @currentBuild {
-        @updateURLValue = @manifest['shortcut_icloud_url']
+        @updateURLValue = getValue(@manifest, "shortcut_icloud_url")
         @updateURL = "{@updateURLValue}"
         @updateSchemeValue = getURLDetail(@updateURL, "Scheme")
         @updateHostValue = getURLDetail(@updateURL, "Host")

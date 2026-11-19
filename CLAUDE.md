@@ -57,7 +57,7 @@ There is no separate linter configured. The required automated checks are the Py
 The modules under `src/lib/` form the processing pipeline:
 
 1. Shared URL normalization accepts HTTPS, trims outer whitespace, and removes fragments. Immediately before TikWM, only exact `vt.tiktok.com`/`vm.tiktok.com` hosts are expanded once and the resulting HTTPS TikTok hostname is validated again.
-2. TikWM input is URL-encoded exactly once, then the response contract checks `code` and `data`.
+2. TikWM input is URL-encoded exactly once, then the response contract checks `code` and `data`. Use `getValue(dictionary, "literal_key")` for constant dictionary keys; coerce API codes with `number(...)` and messages with `getText(...)` instead of relying on bracket interpolation.
 3. Content classification checks `data.images` before reading video keys.
 4. Video selection implements `hdplay -> play` fallback; slideshow processing downloads and saves one image at a time rather than retaining album binaries.
 5. Audio saves through Files, not Photos. Non-TikTok URLs are copied and handed to the fixed Cobalt URL.

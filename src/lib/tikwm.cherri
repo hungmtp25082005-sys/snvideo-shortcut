@@ -47,16 +47,19 @@ if !@response {
     stop()
 }
 
-@responseCodeValue = @response['code']
-@responseCode = "{@responseCodeValue}"
-@responseMsgValue = @response['msg']
-@responseMsg = "{@responseMsgValue}"
-if @responseCode != "0" {
+@responseCodeValue = getValue(@response, "code")
+@responseCode = number(@responseCodeValue)
+@responseMsgValue = getValue(@response, "msg")
+@responseMsg = getText(@responseMsgValue)
+if !@responseMsg {
+    @responseMsg = "Không có thông báo từ TikWM"
+}
+if @responseCode != 0 {
     alert("TikWM lỗi (code {@responseCode}): {@responseMsg}", "SNVideo")
     stop()
 }
 
-@dataValue = @response['data']
+@dataValue = getValue(@response, "data")
 if !@dataValue {
     alert("Phản hồi TikWM thiếu trường data.", "SNVideo")
     stop()
@@ -68,7 +71,7 @@ if !@data {
     stop()
 }
 
-@images = @data['images']
+@images = getValue(@data, "images")
 @isSlideshow = false
 if @images {
     @imageCount = count(@images)

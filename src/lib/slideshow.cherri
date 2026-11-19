@@ -1,8 +1,8 @@
 // Download and save one slideshow image at a time.
 
 @imageCount = count(@images)
-@audioValue = @data['music']
-@mediaIDValue = @data['id']
+@audioValue = getValue(@data, "music")
+@mediaIDValue = getValue(@data, "id")
 @audioURL = "{@audioValue}"
 @mediaID = "{@mediaIDValue}"
 

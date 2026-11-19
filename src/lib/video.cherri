@@ -1,9 +1,9 @@
 // Select one video/audio result, then download at most one media file.
 
-@hdValue = @data['hdplay']
-@sdValue = @data['play']
-@audioValue = @data['music']
-@mediaIDValue = @data['id']
+@hdValue = getValue(@data, "hdplay")
+@sdValue = getValue(@data, "play")
+@audioValue = getValue(@data, "music")
+@mediaIDValue = getValue(@data, "id")
 @hdURL = "{@hdValue}"
 @sdURL = "{@sdValue}"
 @audioURL = "{@audioValue}"
