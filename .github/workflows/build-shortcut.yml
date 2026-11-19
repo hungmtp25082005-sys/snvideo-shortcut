@@ -42,7 +42,7 @@ jobs:
           cache: false
 
       - name: Install pinned Cherri compiler
-        run: go install github.com/electrikmilk/cherri@${CHERRI_VERSION}
+        run: go install github.com/electrikmilk/cherri/v2@${CHERRI_VERSION}
 
       - name: Compile unsigned validation artifact
         run: |
@@ -71,7 +71,7 @@ jobs:
           cache: false
 
       - name: Install pinned Cherri compiler
-        run: go install github.com/electrikmilk/cherri@${CHERRI_VERSION}
+        run: go install github.com/electrikmilk/cherri/v2@${CHERRI_VERSION}
 
       - name: Compile and sign for public sharing
         run: |

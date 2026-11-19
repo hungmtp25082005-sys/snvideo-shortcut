@@ -15,7 +15,7 @@ Mã nguồn dùng **Cherri 2.4.0** và tạo Apple Shortcut từ `src/SNVideo.ch
 Yêu cầu Go 1.24 trở lên:
 
 ```bash
-go install github.com/electrikmilk/cherri@v2.4.0
+go install github.com/electrikmilk/cherri/v2@v2.4.0
 mkdir -p dist
 "$(go env GOPATH)/bin/cherri" src/SNVideo.cherri \
   --share anyone \

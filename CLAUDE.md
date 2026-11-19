@@ -13,7 +13,7 @@ SNVideo has no project-operated backend. It sends validated TikTok URLs directly
 Install the pinned compiler:
 
 ```bash
-go install github.com/electrikmilk/cherri@v2.4.0
+go install github.com/electrikmilk/cherri/v2@v2.4.0
 ```
 
 Run all source-contract tests:
