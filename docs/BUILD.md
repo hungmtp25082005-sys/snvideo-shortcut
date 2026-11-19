@@ -8,14 +8,15 @@ Mã nguồn dùng **Cherri 2.4.0** và tạo Apple Shortcut từ `src/SNVideo.ch
 - `src/config.cherri`: phiên bản, build và endpoint cố định.
 - `src/lib/`: các module `common`, `tikwm`, `video`, `slideshow`, `audio`, `cobalt`, `update`.
 - `tests/test_source_contract.py`: kiểm tra các bất biến kiến trúc và bảo mật.
+- `scripts/install-cherri.sh`: clone tag, xác minh commit và build compiler Cherri dùng chung cho local/CI.
 - `.github/workflows/build-shortcut.yml`: kiểm tra trên Linux, sau đó build và ký trên macOS.
 
 ## Build cục bộ trên macOS
 
-Yêu cầu Go 1.24 trở lên:
+Yêu cầu Git và Go 1.24 trở lên. Cherri được clone từ tag `v2.4.0`, xác minh commit đã pin rồi build cục bộ vì upstream không thể cài bằng `go install ...@v2.4.0`:
 
 ```bash
-go install github.com/electrikmilk/cherri/v2@v2.4.0
+bash scripts/install-cherri.sh v2.4.0
 mkdir -p dist
 "$(go env GOPATH)/bin/cherri" src/SNVideo.cherri \
   --share anyone \

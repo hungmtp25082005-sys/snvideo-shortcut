@@ -10,10 +10,10 @@ SNVideo has no project-operated backend. It sends validated TikTok URLs directly
 
 ## Development commands
 
-Install the pinned compiler:
+Install the pinned compiler by cloning the release tag, verifying its commit, and building locally (upstream cannot be installed with `go install ...@v2.4.0` because its module path omits `/v2`):
 
 ```bash
-go install github.com/electrikmilk/cherri/v2@v2.4.0
+bash scripts/install-cherri.sh v2.4.0
 ```
 
 Run all source-contract tests:

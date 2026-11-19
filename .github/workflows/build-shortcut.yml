@@ -19,6 +19,7 @@ concurrency:
 
 env:
   CHERRI_VERSION: v2.4.0
+  CHERRI_COMMIT: 2afd41f96988ca4a20aa0afcbf763251e4b20fb7
   GO_VERSION: 1.24.0
 
 jobs:
@@ -42,7 +43,7 @@ jobs:
           cache: false
 
       - name: Install pinned Cherri compiler
-        run: go install github.com/electrikmilk/cherri/v2@${CHERRI_VERSION}
+        run: bash scripts/install-cherri.sh "${CHERRI_VERSION}"
 
       - name: Compile unsigned validation artifact
         run: |
@@ -71,7 +72,7 @@ jobs:
           cache: false
 
       - name: Install pinned Cherri compiler
-        run: go install github.com/electrikmilk/cherri/v2@${CHERRI_VERSION}
+        run: bash scripts/install-cherri.sh "${CHERRI_VERSION}"
 
       - name: Compile and sign for public sharing
         run: |

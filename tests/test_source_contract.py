@@ -12,6 +12,8 @@ SLIDESHOW = (SRC / "lib" / "slideshow.cherri").read_text(encoding="utf-8")
 VIDEO = (SRC / "lib" / "video.cherri").read_text(encoding="utf-8")
 UPDATE = (SRC / "lib" / "update.cherri").read_text(encoding="utf-8")
 COBALT = (SRC / "lib" / "cobalt.cherri").read_text(encoding="utf-8")
+WORKFLOW = (ROOT / ".github" / "workflows" / "build-shortcut.yml").read_text(encoding="utf-8")
+INSTALLER = (ROOT / "scripts" / "install-cherri.sh").read_text(encoding="utf-8")
 ALL_SOURCE = "\n".join(
     path.read_text(encoding="utf-8") for path in sorted(SRC.rglob("*.cherri"))
 )
@@ -86,6 +88,19 @@ class SourceContractTests(unittest.TestCase):
         self.assertGreater(manifest["build"], 0)
         self.assertEqual(manifest["minimum_ios"], "TBD")
         self.assertTrue(manifest["shortcut_icloud_url"].startswith("https://www.icloud.com/shortcuts/"))
+
+    def test_cherri_installer_builds_the_pinned_tag_for_both_jobs(self):
+        pinned_commit = "2afd41f96988ca4a20aa0afcbf763251e4b20fb7"
+        broken_install = "go install " + "github.com/electrikmilk/cherri"
+        self.assertNotIn(broken_install, WORKFLOW)
+        self.assertEqual(
+            WORKFLOW.count('bash scripts/install-cherri.sh "${CHERRI_VERSION}"'),
+            2,
+        )
+        self.assertIn(f"CHERRI_COMMIT: {pinned_commit}", WORKFLOW)
+        self.assertIn(f'DEFAULT_COMMIT="{pinned_commit}"', INSTALLER)
+        self.assertIn('git clone \\\n', INSTALLER)
+        self.assertIn('go build -C "$source_dir"', INSTALLER)
 
     def test_no_obvious_secret_material(self):
         secret_patterns = (
